@@ -1,6 +1,6 @@
 **The English introduction is placed below the Chinese version.**
 
-本模块实现了一些对Python对象的测试程序，以及一套pyc文件的压缩、加壳和脱壳工具链。这里着重介绍加壳和脱壳的工具链。
+本仓库基于Python的底层字节码，实现了一套完整的pyc文件的压缩、加壳和脱壳工具链。
 ## 0.依赖的库
 这些加壳和脱壳的工具依赖于`pyobject`库，尤其是`pyobject.code_`这个子模块中的`Code`类。`pyobject`可通过`pip install pyobject`命令安装。
 ## 1.命令行
@@ -65,8 +65,7 @@ def process_code(co):
 但是，脱壳工具无法还原混淆工具混淆过的指令和变量名。
 
 
-# Description of the Module
-This module implements some test programs for Python objects, as well as a toolchain for compressing, packing, and unpacking `.pyc` files. Here, we focus on the packing and unpacking tools.
+This repository implements a complete toolchain for compressing, packing, and unpacking pyc files based on Python's underlying bytecode.
 
 ## 0. Dependencies
 The packing and unpacking tools depend on the `pyobject` library, particularly the `Code` class in the `pyobject.code_` submodule. You can install `pyobject` using the command:
