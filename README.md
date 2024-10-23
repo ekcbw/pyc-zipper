@@ -110,8 +110,8 @@ Here is the core code for the obfuscation part (if there are better obfuscation 
 ```py
 def process_code(co):
     co.co_lnotab = b''
-    if co.co_code[-4:] != b'S\x00S\x00': # Not previously added
-        co.co_code += b'S\x00' # Add a useless RETURN_VALUE instruction to confuse the decompiler
+    if co.co_code[-4:] != RET_INSTRUCTION * 2: # Not added yet
+        co.co_code += RET_INSTRUCTION # Add a useless return instruction to confuse the decompiler
     co.co_filename = ''
     co_consts = co.co_consts
     # No need to add co.co_posonlyargcount value (for Python 3.8+)
