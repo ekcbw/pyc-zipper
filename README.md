@@ -7,10 +7,6 @@
 ```
 python pyc_zipper_xxx.py <待处理的.pyc文件1> <.pyc文件2> ...
 ```
-对于处理目录的工具：
-```
-python pyc_zipper_处理目录.py <待处理的目录>
-```
 ## 2.压缩壳
 `pyc_zipper_bz2.py`，`pyc_zipper_lzma.py`和`pyc_zipper_zlib.py`是为.pyc文件添加压缩壳的工具，加壳后的.pyc文件在运行时，会调用Python内置的`bz2`，`lzma`或`zlib`模块对压缩前的字节码进行自解压缩，再执行解压后的字节码。
 此外，压缩工具还会删除`co_lnotab`这一无用的附加信息，以及`co_filename`这一包含源`.py`文件路径的隐私信息，以进一步缩小体积。
@@ -35,7 +31,7 @@ exec(marshal.loads(lzma.decompress(b'\xfd7zXZ...')))
 #### 兼容性
 这些压缩工具兼容所有Python 3版本，由于不依赖特定版本的字节码。
 ## 3.混淆和防反编译壳
-前面的压缩工具并不能防止`.pyc`文件被`uncompyle6`等库反编译。要防止反编译，还需要用到混淆工具`pyc_zipper_保护字节码.py`，混淆字节码的指令，并混淆变量名。
+前面的压缩工具并不能防止`.pyc`文件被`uncompyle6`等库反编译。要防止反编译，还需要用到混淆工具`pyc_zipper_obfuscate.py`，混淆字节码的指令，并混淆变量名。
 这是混淆部分的核心代码（如果有更好的混淆方法，可以在issue中提出）：
 ```py
 def process_code(co):
@@ -61,7 +57,7 @@ def process_code(co):
 #### 兼容性
 这个混淆工具也兼容所有Python 3版本，由于不依赖特定版本的字节码。
 ## 4.脱壳工具
-`pyc_zipper_脱壳.py`这个脱壳工具支持脱壳前面压缩工具压缩过的`.pyc`文件，将压缩前的`.pyc`文件还原。
+`pyc_zipper_unpack.py`这个脱壳工具支持脱壳前面压缩工具压缩过的`.pyc`文件，将压缩前的`.pyc`文件还原。
 但是，脱壳工具无法还原混淆工具混淆过的指令和变量名。
 
 
@@ -76,10 +72,6 @@ pip install pyobject
 ## 1. Command Line
 ```
 python pyc_zipper_xxx.py <input .pyc file1> <input .pyc file2> ...
-```
-For the directory processing tool:
-```
-python pyc_zipper_process_directory.py <input directory>
 ```
 
 ## 2. Compression Packing
@@ -112,7 +104,7 @@ My tests have shown that the `.pyc` file compressed with `lzma` results in the s
 These compression tools are compatible with all versions of Python 3, as they do not rely on specific bytecode versions.
 
 ## 3. Obfuscation and Anti-Decompilation Packing
-The previous compression tools cannot prevent `.pyc` files from being decompiled by libraries like `uncompyle6`. To prevent decompilation, an obfuscation tool `pyc_zipper_obfuscate_bytecode.py` is used to obfuscate the bytecode instructions and variable names.
+The previous compression tools cannot prevent `.pyc` files from being decompiled by libraries like `uncompyle6`. To prevent decompilation, an obfuscation tool `pyc_zipper_obfuscate.py` is used to obfuscate the bytecode instructions and variable names.
 
 Here is the core code for the obfuscation part (if there are better obfuscation methods, you can suggest them in the issues):
 ```py
