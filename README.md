@@ -37,7 +37,7 @@ exec(marshal.loads(lzma.decompress(b'\xfd7zXZ...')))
 def process_code(co):
     co.co_lnotab = b''
     if co.co_code[-4:]!=RET_INSTRUCTION*2: # 未添加过
-        co.co_code += RET_INSTRUCTION # 增加一个无用的RETURN_VALUE指令，用于干扰反编译器的解析
+        co.co_code += RET_INSTRUCTION # 增加一个无用的返回指令，用于干扰反编译器的解析
     co.co_filename = ''
     co_consts = co.co_consts
     # 无需加上co.co_posonlyargcount的值 (Python 3.8+中)
