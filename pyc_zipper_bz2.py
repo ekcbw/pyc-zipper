@@ -8,34 +8,15 @@ except ImportError:
     from importlib._bootstrap import MAGIC_NUMBER
 
 def dump_to_pyc(pycfilename,code,pycheader=None):
-    c=Code()
-# 反汇编的co_code
-##2     0 LOAD_CONST               0 (455)
-##      2 LOAD_CONST               1 (None)
-##      4 IMPORT_NAME              0 (bz2)
-##      6 STORE_NAME               0 (bz2)
-##      8 LOAD_CONST               0 (455)
-##     10 LOAD_CONST               1 (None)
-##     12 IMPORT_NAME              1 (marshal)
-##     14 STORE_NAME               1 (marshal)
-##
-##3    16 LOAD_NAME                2 (exec)
-##     18 LOAD_NAME                1 (marshal)
-##     20 LOAD_METHOD              3 (loads)
-##     22 LOAD_NAME                0 (bz2)
-##     24 LOAD_METHOD              4 (decompress)
-##     26 LOAD_CONST               2 (数据)
-##     28 CALL_METHOD              1
-##     30 CALL_METHOD              1
-##     32 CALL_FUNCTION            1
-##     34 RETURN_VALUE
-    c.co_code=b'''d\x00d\x01l\x00Z\x00d\x00d\x01l\x01Z\x01e\x02\
-e\x01\xa0\x03e\x00\xa0\x04d\x02\xa1\x01\xa1\x01\x83\x01\x01\x00d\x01S\x00''' # 仅支持Python 3.7及以上
-    c.co_names=('bz2', 'marshal', 'exec', 'loads', 'decompress')
-    #也可换成bz2,bz2等其他压缩模块
-    c.co_consts=(0, None,bz2.compress(marshal.dumps(code._code)))
-    c.co_flags=64 # NOFREE
-    c.co_stacksize=6
+    c=Code(compile("""
+import bz2,marshal
+exec(marshal.loads(bz2.decompress(b'')))""","","exec"))
+    #也可换成bz2,lzma等其他压缩模块
+    data=bz2.compress(marshal.dumps(code._code))
+    for i in range(len(c.co_consts)):
+        if c.co_consts[i]==b'':
+            c.co_consts=c.co_consts[:i]+(data,)+c.co_consts[i+1:]
+            break
     with open(pycfilename,'wb') as f:
         # 写入 pyc 文件头
         if pycheader is None:
@@ -66,7 +47,7 @@ if len(sys.argv) == 1:
 
 for file in sys.argv[1:]:
     data=open(file,'rb').read()
-    if data[16]==227:
+    if data[16]==0xe3:
         old_header=data[:16];data=data[16:]
     else:
         old_header=data[:12];data=data[12:]

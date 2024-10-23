@@ -2,6 +2,7 @@
 import sys,marshal,os
 from inspect import iscode
 from pyobject.code_ import Code
+from search_file import search # search_file库
 try:
     from importlib._bootstrap_external import MAGIC_NUMBER
 except ImportError:
@@ -36,7 +37,7 @@ def process_code(co):
 
 def process(file):
     data=open(file,'rb').read()
-    if data[16]==227:
+    if data[16]==0xe3:
         old_header=data[:16];data=data[16:]
     else:
         old_header=data[:12];data=data[12:]
@@ -47,7 +48,8 @@ def process(file):
     print('Processed:',file)
 
 sys.path.append('\\'.join(__file__.split('\\')[:-3]))
-import search_file as s
 if len(sys.argv)==2 and os.path.isdir(sys.argv[1]):
-    for file in s.search('.pyc',sys.argv[1]):
+    for file in search('.pyc',sys.argv[1]):
         process(file)
+else:
+    print('Usage: %s [directory name]' % sys.argv[0])

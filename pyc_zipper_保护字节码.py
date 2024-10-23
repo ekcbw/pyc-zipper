@@ -7,6 +7,8 @@ try:
 except ImportError:
     from importlib._bootstrap import MAGIC_NUMBER
 
+RET_INSTRUCTION=compile('','',"exec").co_code[-2:] \
+    if sys.version_info.minor >= 6 else b'S' # 获取当前版本的返回指令
 def dump_to_pyc(pycfilename,code,pycheader=None):
     # 制作pyc文件
     with open(pycfilename,'wb') as f:
@@ -23,8 +25,8 @@ def dump_to_pyc(pycfilename,code,pycheader=None):
 
 def process_code(co):
     co.co_lnotab = b''
-    if co.co_code[-4:]!=b'S\x00S\x00':
-        co.co_code += b'S\x00' # 增加一个无用的RETURN_VALUE指令，用于干扰反编译器的解析
+    if co.co_code[-4:]!=RET_INSTRUCTION*2:
+        co.co_code += RET_INSTRUCTION # 增加一个无用的返回指令，用于干扰反编译器的解析
     co.co_filename = ''
     #co.co_name = ''
     co_consts = co.co_consts
@@ -41,12 +43,13 @@ def process_code(co):
             co_consts = co_consts[:i] + (data._code,) + co_consts[i+1:]
     co.co_consts = co_consts
     return co
+
 if len(sys.argv) == 1:
     print('Usage: %s [filename]' % sys.argv[0])
 
 for file in sys.argv[1:]:
     data=open(file,'rb').read()
-    if data[16]==227: # 兼容不同Python版本
+    if data[16]==0xe3: # 兼容不同Python版本
         old_header=data[:16];data=data[16:]
     else:
         old_header=data[:12];data=data[12:]

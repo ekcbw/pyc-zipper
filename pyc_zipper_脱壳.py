@@ -20,26 +20,36 @@ def dump_to_pyc(pycfilename,data,pycheader=None):
 if len(sys.argv) == 1:
     print('Usage: %s [filename]' % sys.argv[0])
 
+modules=['bz2','lzma','zlib']
 for file in sys.argv[1:]:
     try:
         with open(file,'rb') as f:
             d=f.read()
-            if d[16]==227:  # 寻找数据开始的'\xe3'标志
+            if d[16]==0xe3:  # 寻找数据开始的'\xe3'标志
                 old_header=d[:16];d=d[16:]
             else:
                 old_header=d[:12];d=d[12:]
+
             c=marshal.loads(d)
-            modname=c.co_names[0] if len(c.co_names)>=1 else ''
-            if modname in ('bz2','lzma','zlib'):
-                mod=__import__(modname)
-                data=mod.decompress(c.co_consts[2]) # 解压数据
-                try:marshal.loads(data) # 测试解压后数据完整性
-                except Exception as err:
-                    warnings.warn("Bad decompressed data: %s (%s)" % (
-                        type(err).__name__,str(err)))
-                dump_to_pyc(file,data,old_header)
-                print('Processed:',file)
+            for mod_name in c.co_names:
+                if mod_name in modules:
+                    break
             else:
-                raise TypeError('不是压缩的pyc文件: '+file)
+                raise ValueError('Not a compressed file: '+file)
+
+            for data in c.co_consts:
+                if isinstance(data,bytes):
+                    break
+            else:
+                raise ValueError('Not a compressed file: '+file)
+
+            mod=__import__(mod_name)
+            decompressed=mod.decompress(data) # 解压数据
+            try:marshal.loads(decompressed) # 测试解压后数据完整性
+            except Exception as err:
+                warnings.warn("Bad compressed data: %s (%s)" % (
+                              type(err).__name__,str(err)))
+            dump_to_pyc(file,decompressed,old_header)
+            print('Processed:',file)
     except Exception:
         traceback.print_exc()
