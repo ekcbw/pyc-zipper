@@ -121,7 +121,7 @@ Python的格式化字符串在编译成字节码时，会抹去具体的变量�
 
 这是将混淆后的.pyc文件，用uncompyle6库反编译得到的字节码示例（`obfuscate_bytecode`参数设为了`False`，便于观察到反编译结果，而且开启了混淆参数名`obfuscate_argname`）。  
 由于`co_name`信息被删除，类名和函数名无法被反编译，但类和函数存储在了局部和全局变量，因此混淆后的代码依然能运行：
-```
+```python
 -- Stacks of completed symbols:
 START ::= |- stmts . 
 and ::= expr . JUMP_IF_FALSE_OR_POP expr \e_come_from_opt
@@ -341,7 +341,7 @@ Since the variable name `x` is stored as the operand of the `LOAD_NAME` instruct
 #### Example of Obfuscation Results
 Here is an example of bytecode obtained by decompiling an obfuscated `.pyc` file using the `uncompyle6` library (`obfuscate_bytecode` was set to `False` for easier observation of the decompiled results, and parameter name obfuscation `obfuscate_argname` was enabled).  
 Since the `co_name` information was removed, class and function names cannot be decompiled. However, the obfuscated code still runs because the classes and functions are stored in local and global variables:
-```
+```python
 -- Stacks of completed symbols:
 START ::= |- stmts . 
 and ::= expr . JUMP_IF_FALSE_OR_POP expr \e_come_from_opt
