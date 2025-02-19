@@ -1,6 +1,6 @@
 **The English introduction is placed below the Chinese version.**
 
-本仓库基于Python的底层字节码，实现了一套完整的pyc文件的压缩、加壳和脱壳工具链。
+本仓库基于Python的底层字节码，实现了一套完整的pyc文件的压缩、加壳、混淆和脱壳工具链。
 
 ## 0.安装及依赖的库
 
@@ -22,7 +22,7 @@ pyc-zipper [-h] [--obfuscate] [--obfuscate-global]
                 [--obfuscate-lineno] [--obfuscate-filename]
                 [--obfuscate-code-name] [--obfuscate-bytecode]
                 [--obfuscate-argname] [--unpack] [--version]
-                [--compress-module COMPRESS_MODULE]
+                [--compress-module COMPRESS_MODULE] [--no-obfuscation]
                 file1 [file2 ...]
 ```
 **压缩、混淆和加壳**
@@ -35,11 +35,62 @@ pyc-zipper [-h] [--obfuscate] [--obfuscate-global]
 - obfuscate-code-name: 混淆字节码的内部名称(函数名、类名)。  
 - obfuscate-bytecode: 混淆字节码的指令。  
 - obfuscate-argname: 混淆函数参数名。(目前要求代码不能用关键字参数调用被混淆的函数)  
+- no-obfuscation: 禁用混淆功能。(如果不指定禁用混淆，混淆本地变量名是默认启用的)  
 
 **解压缩、脱壳**
 - unpack: 解压缩被压缩过的pyc文件，pyc-zipper会自动检测模块名称，模块名称也可以手动通过compress-module参数提供。注意unpack开关只能和compress-module，不能和其他开关一起使用。  
 
 此外，如果终端提示找不到`pyc-zipper`命令，可以用`python -m pyc_zipper`替代。  
+
+#### 用于PyInstaller
+`pyc-zipper`内置了集成PyInstaller打包工具的功能。调用`pyinstaller file.py`之后，会生成一个文件`file.spec`。  
+`file.spec`一般是一个Python文件，只需要在`file.spec`开头加入：  
+```python
+from pyc_zipper import hook_pyinstaller
+hook_pyinstaller()
+```
+或者自定义自己的参数，如：
+```python
+hook_pyinstaller(comp_module="lzma",no_obfuscation=False,
+                 obfuscate_global=True,obfuscate_lineno=True,
+                 obfuscate_filename=True,obfuscate_code_name=True,
+                 obfuscate_bytecode=True,obfuscate_argname=False)
+```
+`comp_module`为表示压缩模块名称的字符串，默认为`None`，除此之外绝大多数参数的用法和命令行的`pyc-zipper`一致。  
+最后运行：  
+```
+pyinstaller file.spec
+```
+注意不能再使用`pyinstaller file.py`，因为会生成一个新的spec文件覆盖掉`file.spec`。  
+如果在运行PyInstaller时看到`pyc-zipper`的输出信息，如：  
+```
+3545 INFO: Building PYZ because PYZ-00.toc is non existent
+3545 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz
+3919 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz completed successfully.
+3926 INFO: checking PKG
+3927 INFO: Building PKG because PKG-00.toc is non existent
+3927 INFO: Building PKG (CArchive) PKG-00.pkg
+pyc-zipper: processing ('pyiboot01_bootstrap', 'D:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python37-32\\lib\\site-packages\\PyInstaller\\loader\\pyiboot01_bootstrap.py') in _load_code
+Obfuscating code '<module>'
+Obfuscating code 'NullWriter'
+Obfuscating code 'write'
+Obfuscating code 'flush'
+Obfuscating code 'isatty'
+Obfuscating code '_frozen_name'
+Obfuscating code 'PyInstallerImportError'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerCDLL'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerPyDLL'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerWinDLL'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerOleDLL'
+Obfuscating code '__init__'
+pyc-zipper: processing ('file', 'E:\\Git-repositories\\Github-publish\\file.py') in _load_code
+Obfuscating code '<module>'
+```
+则混淆成功。
 
 ## 2.压缩壳
 [pyc_zipper/compress.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/compress.py)负责为.pyc文件添加压缩壳，加壳后的.pyc文件在运行时，会调用Python内置的`bz2`，`lzma`或`zlib`模块对压缩前的字节码进行自解压缩，再执行解压后的字节码。
@@ -243,7 +294,7 @@ class :
 
 ---
 
-This repository implements a complete toolchain for compressing, packing, and unpacking pyc files based on Python's underlying bytecode.
+This repository implements a complete toolchain for compressing, packing, obfuscating and unpacking pyc files based on Python's underlying bytecode.
 
 ## 0. Installation and Dependencies
 
@@ -265,7 +316,7 @@ pyc-zipper [-h] [--obfuscate] [--obfuscate-global]
                 [--obfuscate-lineno] [--obfuscate-filename]
                 [--obfuscate-code-name] [--obfuscate-bytecode]
                 [--obfuscate-argname] [--unpack] [--version]
-                [--compress-module COMPRESS_MODULE]
+                [--compress-module COMPRESS_MODULE] [--no-obfuscation]
                 file1 [file2 ...]
 ```
 **Compression, Obfuscation, and Packing**
@@ -278,11 +329,62 @@ pyc-zipper [-h] [--obfuscate] [--obfuscate-global]
 - `obfuscate-code-name`: Obfuscate the internal names (function names, class names) of the bytecode.  
 - `obfuscate-bytecode`: Obfuscate the bytecode instructions.  
 - `obfuscate-argname`: Obfuscate function parameter names. (TODO: currently the source code cannot use keyword arguments to call obfuscated functions.)
+- `no-obfuscation`: Disable obfuscation. (If obfuscation is not explicitly disabled, obfuscating local variable names is enabled by default.)
 
 **Decompression and Unpacking**
 - `unpack`: Decompress previously compressed `.pyc` files. `pyc-zipper` will automatically detect the module name, which can also be manually provided through the `compress-module` parameter. Note that the `unpack` switch can only be used with `compress-module` and cannot be combined with other switches.
 
 Additionally, if the terminal prompts that the `pyc-zipper` command cannot be found, you can use `python -m pyc_zipper` as an alternative.
+
+#### For PyInstaller
+`pyc-zipper` has built-in functionality to integrate with the PyInstaller packaging tool. After calling `pyinstaller file.py`, a file named `file.spec` will be generated.  
+`file.spec` is generally a Python file, and you only need to add the following at the beginning of `file.spec`:  
+```python
+from pyc_zipper import hook_pyinstaller
+hook_pyinstaller()
+```
+Alternatively, you can customize your own parameters, such as:
+```python
+hook_pyinstaller(comp_module="lzma", no_obfuscation=False,
+                 obfuscate_global=True, obfuscate_lineno=True,
+                 obfuscate_filename=True, obfuscate_code_name=True,
+                 obfuscate_bytecode=True, obfuscate_argname=False)
+```
+`comp_module` is a string representing the name of the compression module, defaulting to `None`. Aside from that, the usage of most parameters is consistent with the command line options of `pyc-zipper`.  
+Finally, run:  
+```
+pyinstaller file.spec
+```
+Note that you cannot use `pyinstaller file.py` again, as it will generate a new spec file that will overwrite `file.spec`.  
+If you see output information from `pyc-zipper` while running PyInstaller, such as:  
+```
+3545 INFO: Building PYZ because PYZ-00.toc is non existent
+3545 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz
+3919 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz completed successfully.
+3926 INFO: checking PKG
+3927 INFO: Building PKG because PKG-00.toc is non existent
+3927 INFO: Building PKG (CArchive) PKG-00.pkg
+pyc-zipper: processing ('pyiboot01_bootstrap', 'D:\\Users\\Administrator\\AppData\\Local\\Programs\\Python\\Python37-32\\lib\\site-packages\\PyInstaller\\loader\\pyiboot01_bootstrap.py') in _load_code
+Obfuscating code '<module>'
+Obfuscating code 'NullWriter'
+Obfuscating code 'write'
+Obfuscating code 'flush'
+Obfuscating code 'isatty'
+Obfuscating code '_frozen_name'
+Obfuscating code 'PyInstallerImportError'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerCDLL'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerPyDLL'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerWinDLL'
+Obfuscating code '__init__'
+Obfuscating code 'PyInstallerOleDLL'
+Obfuscating code '__init__'
+pyc-zipper: processing ('file', 'E:\\Git-repositories\\Github-publish\\file.py') in _load_code
+Obfuscating code '<module>'
+```
+Then the obfuscation is successful.
 
 ## 2. Compression Packing
 [pyc_zipper/compress.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/compress.py) is responsible for adding a compression pack to `.pyc` files. The packed `.pyc` files will call Python's built-in `bz2`, `lzma`, or `zlib` modules to decompress the bytecode during execution.

@@ -5,7 +5,7 @@ def compress_code(code,comp_module=None):
     if comp_module is not None:
         if isinstance(comp_module,str):
             comp_module=__import__(comp_module)
-        print(f"Compressing file using {comp_module.__name__}")
+        print(f"Compressing code using {comp_module.__name__}")
         c=Code(compile(f"""
 import {comp_module.__name__},marshal
 exec(marshal.loads(zlib.decompress(b'')))""","","exec"))

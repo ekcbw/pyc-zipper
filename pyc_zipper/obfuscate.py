@@ -17,7 +17,7 @@ def obfuscate_code(co,closure_vars={},globalvars={},
     # obfuscate_argname的函数目前不能用关键字参数调用
     # closure_vars: 闭包函数使用的外部本地变量
     old_co=co.copy()
-    print(f"Processing name {old_co.co_name!r}")
+    print(f"Obfuscating code {old_co.co_name!r}")
 
     if obfuscate_lineno:
         co.co_lnotab = b''

@@ -33,10 +33,22 @@ def hook_pyinstaller(*args,**kw): # 可在pyinstaller的spec文件中使用
     except ImportError:
         raise NotImplementedError("PyInstaller is required")
 
+    _load_code = utils._load_code
     _get_code_object = utils.get_code_object
-    @functools.wraps(utils.get_code_object)
-    def inner(*args,**kw):
-        co = _get_code_object(*args,**kw)
-        return pyc_zipper.process_code(co,*args,**kw)
 
-    utils.get_code_object=inner
+    @functools.wraps(utils.get_code_object)
+    def inner_load_code(*_args,**_kw):
+        co = _load_code(*_args,**_kw)
+        print(f"""pyc-zipper: processing \
+{_args}{' '+str(_kw) if _kw else ''} in _load_code""")
+        return pyc_zipper.process_code(Code(co),*args,**kw).to_code()
+
+    @functools.wraps(utils.get_code_object)
+    def inner_get_code_object(*_args,**_kw):
+        print(f"""pyc-zipper: processing \
+{_args}{' '+str(_kw) if _kw else ''} in get_code_object""")
+        co = _get_code_object(*_args,**_kw)
+        return pyc_zipper.process_code(Code(co),*args,**kw).to_code()
+
+    utils._load_code=inner_load_code
+    utils.get_code_object=inner_get_code_object

@@ -36,7 +36,7 @@ def main():
     parser.add_argument('--obfuscate-code-name', action='store_true', help='Obfuscate code name')
     parser.add_argument('--obfuscate-bytecode', action='store_true', help='Obfuscate bytecode')
     parser.add_argument('--obfuscate-argname', action='store_true', help='Obfuscate argument names')
-    parser.add_argument('--no-obfuscation', action='store_true', help="Don't obfuscate")
+    parser.add_argument('--no-obfuscation', action='store_true', help='Disable obfuscation')
     parser.add_argument('--unpack', action='store_true', help='Unpack pyc files')
     parser.add_argument('--version', action='store_true', help='Display the version and exit')
     parser.add_argument('--compress-module', type=str, help='Specify module to compress (optional)')
@@ -93,6 +93,7 @@ def main():
                 dump_to_pyc(pycfile, data, old_header)
             else:
                 co=process_code(co,comp_module=args.compress_module,
+                                no_obfuscation=args.no_obfuscation,
                                 obfuscate_global=args.obfuscate_global,
                                 obfuscate_lineno=args.obfuscate_lineno,
                                 obfuscate_filename=args.obfuscate_filename,
