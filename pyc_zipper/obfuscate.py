@@ -1,12 +1,7 @@
-# pyc文件压缩、保护工具
-import sys,marshal,builtins
+import sys,builtins
 from dis import get_instructions
 from inspect import iscode
 from pyobject.code_ import Code
-try:
-    from importlib._bootstrap_external import MAGIC_NUMBER
-except ImportError:
-    from importlib._bootstrap import MAGIC_NUMBER
 
 RET_INSTRUCTION=compile('','',"exec").co_code[-2:] \
     if sys.version_info.minor >= 6 else b'S' # 获取当前版本的返回指令
@@ -14,21 +9,8 @@ def is_builtin(name):
     return hasattr(builtins,name)
 def is_magicname(name):
     return name.startswith("__") and name.endswith("__")
-def dump_to_pyc(pycfilename,code,pycheader=None):
-    # 生成pyc文件，支持自定义的文件头
-    with open(pycfilename,'wb') as f:
-        # 写入 pyc 文件头
-        if pycheader is None:
-            # 自动生成 pyc 文件头
-            if sys.version_info.minor >= 7:
-                pycheader=MAGIC_NUMBER+b'\x00'*12
-            else:
-                pycheader=MAGIC_NUMBER+b'\x00'*8
-        f.write(pycheader)
-        # 写入bytecode
-        marshal.dump(code._code,f)
 
-def process_code(co,closure_vars={},globalvars={},
+def obfuscate_code(co,closure_vars={},globalvars={},
                  obfuscate_global=True,obfuscate_lineno=True,
                  obfuscate_filename=True,obfuscate_code_name=True,
                  obfuscate_bytecode=True,obfuscate_argname=False):
@@ -112,24 +94,13 @@ def process_code(co,closure_vars={},globalvars={},
     co_consts = co.co_consts
     for i,obj in enumerate(co_consts):
         if iscode(obj):
-            data=process_code(Code(obj),new_closure_vars,new_globalvars,
-                              obfuscate_global=False) # 不再混合内层的全局变量
+            data=obfuscate_code(Code(obj),new_closure_vars,new_globalvars,
+                                obfuscate_global=False, # 不再混合内层的全局变量
+                                obfuscate_lineno=obfuscate_lineno,
+                                obfuscate_filename=obfuscate_filename,
+                                obfuscate_code_name=obfuscate_code_name,
+                                obfuscate_bytecode=obfuscate_bytecode,
+                                obfuscate_argname=obfuscate_argname)
             co_consts = co_consts[:i] + (data._code,) + co_consts[i+1:]
     co.co_consts = co_consts
     return co
-
-if len(sys.argv) == 1:
-    print('Usage: %s [filename]' % sys.argv[0])
-
-for file in sys.argv[1:]:
-    print('Processing:',file)
-    data=open(file,'rb').read()
-    if data[16] in (0x63,0xe3): # 0xe3为cpython，0x63为pypy
-        old_header=data[:16];data=data[16:]
-    else:
-        old_header=data[:12];data=data[12:] # 兼容不同Python版本
-    co = Code(marshal.loads(data))
-
-    process_code(co)
-    dump_to_pyc(file,co,pycheader=old_header)
-    print(f"Completed: {file}\n")

@@ -1,17 +1,48 @@
 **The English introduction is placed below the Chinese version.**
 
 本仓库基于Python的底层字节码，实现了一套完整的pyc文件的压缩、加壳和脱壳工具链。
-## 0.依赖的库
-这些加壳和脱壳的工具依赖于`pyobject`库，尤其是`pyobject.code_`这个子模块中的`Code`类。`Code`类是跨多个Python版本的(目前支持3.4到3.14)。  
-`pyobject`库可在[GitHub](https://github.com/ekcbw/pyobject)找到，或通过`pip install pyobject`命令安装。  
 
-## 1.命令行
+## 0.安装及依赖的库
+
+打开终端，输入命令：
 ```
-python pyc_zipper_xxx.py <待处理的.pyc文件1> <.pyc文件2> ...
+pip install pyc-zipper
 ```
+即可安装`pyc-zipper`。  
+此外，本工具依赖于[pyobject](https://github.com/ekcbw/pyobject)库，尤其是[pyobject.code_](https://github.com/ekcbw/pyobject/blob/main/pyobject/code_.py)这个子模块中的`Code`类。`Code`类是跨多个Python版本(目前支持3.4到3.14，以及PyPy等)的可变字节码封装。  
+安装`pyc-zipper`时，会自动一并安装`pyobject`库，因此无需手动安装。  
+
+## 1.用法及命令行
+```
+pyc-zipper [options] [file1 file2 ...]
+```
+其中的选项options有: 
+```
+pyc-zipper [-h] [--obfuscate] [--obfuscate-global]
+                [--obfuscate-lineno] [--obfuscate-filename]
+                [--obfuscate-code-name] [--obfuscate-bytecode]
+                [--obfuscate-argname] [--unpack] [--version]
+                [--compress-module COMPRESS_MODULE]
+                file1 [file2 ...]
+```
+**压缩、混淆和加壳**
+- file1, file2: 文件名，可以是.py文件或.pyc文件。如果提供了.py文件，则会自动生成处理后的.pyc。  
+- compress-module: 压缩pyc文件的模块，如bz2,lzma,zlib,brotli等，但要求模块必须有`compress`和`decompress`函数。如果不提供，则不压缩pyc文件。  
+- obfuscate: 使用默认选项混淆pyc文件，会启用混淆除参数名以外的所有选项。  
+- obfuscate-global: 混淆全局变量名，以及类名、函数名等。  
+- obfuscate-lineno: 混淆行号信息，使得反编译者无法通过Traceback得知行号进行反编译。  
+- obfuscate-filename: 混淆字节码对应的原始.py源文件名，会去除源文件名如`C:\Users\<用户名>\...\Python313\Lib\original_source.py`中的用户名等隐私。  
+- obfuscate-code-name: 混淆字节码的内部名称(函数名、类名)。  
+- obfuscate-bytecode: 混淆字节码的指令。  
+- obfuscate-argname: 混淆函数参数名。(目前要求代码不能用关键字参数调用被混淆的函数)  
+
+**解压缩、脱壳**
+- unpack: 解压缩被压缩过的pyc文件，pyc-zipper会自动检测模块名称，模块名称也可以手动通过compress-module参数提供。注意unpack开关只能和compress-module，不能和其他开关一起使用。  
+
+此外，如果终端提示找不到`pyc-zipper`命令，可以用`python -m pyc_zipper`替代。  
+
 ## 2.压缩壳
-`pyc_zipper_bz2.py`，`pyc_zipper_lzma.py`和`pyc_zipper_zlib.py`是为.pyc文件添加压缩壳的工具，加壳后的.pyc文件在运行时，会调用Python内置的`bz2`，`lzma`或`zlib`模块对压缩前的字节码进行自解压缩，再执行解压后的字节码。
-此外，压缩工具还会删除`co_lnotab`这一无用的附加信息，以及`co_filename`这一包含源`.py`文件路径的隐私信息，以进一步缩小体积。
+[pyc_zipper/compress.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/compress.py)负责为.pyc文件添加压缩壳，加壳后的.pyc文件在运行时，会调用Python内置的`bz2`，`lzma`或`zlib`模块对压缩前的字节码进行自解压缩，再执行解压后的字节码。
 #### 自解压程序
 加壳后的`.pyc`文件中存在一个"压缩壳"，首先解压缩、还原出原先的字节码，再执行。
 以`zlib`为例，自解压缩程序如下：
@@ -32,10 +63,11 @@ exec(marshal.loads(lzma.decompress(b'\xfd7zXZ...')))
 经测试，一般同一`.pyc`文件使用`lzma`加壳后的体积最小，`bz2`次之，`zlib`效果最差。
 #### 兼容性
 这些压缩工具兼容所有Python 3版本，由于不依赖特定版本的字节码。
-## 3.混淆和防反编译壳
-前面的压缩工具并不能防止`.pyc`文件被`uncompyle6`等库反编译。要防止反编译，还需要用到混淆工具`pyc_zipper_obfuscate.py`，混淆字节码的指令，并混淆变量名。
 
-#### `process_code` 函数的简明混淆原理
+## 3.混淆和防反编译壳
+前面的压缩工具并不能防止`.pyc`文件被`uncompyle6`等库反编译。要防止反编译，还需要用到源代码在[pyc_zipper/obfuscate.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/obfuscate.py)中的混淆工具，混淆字节码的指令，并混淆变量名。
+
+#### `obfuscate_code` 函数的简明混淆原理
 
 ##### 1. 混淆代码元数据，反调试
 ```python
@@ -206,26 +238,54 @@ class :
 这个混淆工具也兼容所有Python 3版本，由于不依赖特定版本的字节码。
 
 ## 4.脱壳工具
-`pyc_zipper_unpack.py`这个脱壳工具支持脱壳前面压缩工具压缩过的`.pyc`文件，将压缩前的`.pyc`文件还原。  
+源代码在[pyc_zipper/unpack.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/unpack.py)的脱壳工具支持脱壳前面压缩工具压缩过的`.pyc`文件，将压缩前的`.pyc`文件还原。  
 但是，脱壳工具无法还原混淆工具混淆过的指令和变量名。  
 
 ---
 
 This repository implements a complete toolchain for compressing, packing, and unpacking pyc files based on Python's underlying bytecode.
 
-## 0. Dependencies
-The packing and unpacking tools depend on the `pyobject` library, particularly the `Code` class in the `pyobject.code_` submodule. The `Code` class is compatible across multiple Python versions (currently supporting 3.4 to 3.14).  
-The `pyobject` library can be found on [GitHub](https://github.com/ekcbw/pyobject) or installed via the command `pip install pyobject`.  
+## 0. Installation and Dependencies
 
-## 1. Command Line
+Open the terminal and enter the command:
 ```
-python pyc_zipper_xxx.py <input .pyc file1> <input .pyc file2> ...
+pip install pyc-zipper
 ```
+This will install `pyc-zipper`.  
+Additionally, this tool depends on the [pyobject](https://github.com/ekcbw/pyobject) library, particularly the `Code` class in the [pyobject.code_](https://github.com/ekcbw/pyobject/blob/main/pyobject/code_.py) submodule. The `Code` class is a mutable bytecode wrapper that spans multiple Python versions (currently supporting 3.4 to 3.14) and even other implementations including PyPy.  
+When installing `pyc-zipper`, the `pyobject` library will be automatically installed, so manual installation is not required.
+
+## 1. Usage and Command Line
+```
+pyc-zipper [options] [file1 file2 ...]
+```
+The available options are:
+```
+pyc-zipper [-h] [--obfuscate] [--obfuscate-global]
+                [--obfuscate-lineno] [--obfuscate-filename]
+                [--obfuscate-code-name] [--obfuscate-bytecode]
+                [--obfuscate-argname] [--unpack] [--version]
+                [--compress-module COMPRESS_MODULE]
+                file1 [file2 ...]
+```
+**Compression, Obfuscation, and Packing**
+- `file1, file2`: File names, which can be `.py` files or `.pyc` files. If a `.py` file is provided, a processed `.pyc` will be automatically generated.  
+- `compress-module`: The module used to compress `.pyc` files, such as `bz2`, `lzma`, `zlib`, `brotli`, etc., but the module must have `compress` and `decompress` functions. If not provided, the `.pyc` file will not be compressed.  
+- `obfuscate`: Obfuscate the `.pyc` file using default options, enabling all options except for parameter name obfuscation.  
+- `obfuscate-global`: Obfuscate global variable names, as well as class names, function names, etc.  
+- `obfuscate-lineno`: Obfuscate line number information, preventing decompilers from knowing the line numbers through Traceback.  
+- `obfuscate-filename`: Obfuscate the original `.py` source file name corresponding to the bytecode, removing privacy information such as the username from paths like `C:\Users\<username>\...\Python313\Lib\original_source.py`.  
+- `obfuscate-code-name`: Obfuscate the internal names (function names, class names) of the bytecode.  
+- `obfuscate-bytecode`: Obfuscate the bytecode instructions.  
+- `obfuscate-argname`: Obfuscate function parameter names. (TODO: currently the source code cannot use keyword arguments to call obfuscated functions.)
+
+**Decompression and Unpacking**
+- `unpack`: Decompress previously compressed `.pyc` files. `pyc-zipper` will automatically detect the module name, which can also be manually provided through the `compress-module` parameter. Note that the `unpack` switch can only be used with `compress-module` and cannot be combined with other switches.
+
+Additionally, if the terminal prompts that the `pyc-zipper` command cannot be found, you can use `python -m pyc_zipper` as an alternative.
 
 ## 2. Compression Packing
-`pyc_zipper_bz2.py`, `pyc_zipper_lzma.py`, and `pyc_zipper_zlib.py` are tools for adding a compression pack to `.pyc` files. The packed `.pyc` files will call Python's built-in `bz2`, `lzma`, or `zlib` modules to decompress the bytecode during execution.
-
-Additionally, the packing tools will remove the `co_lnotab`, which is unnecessary additional information, and `co_filename`, which contains the privacy information of the source `.py` file path, further reducing the file size.
+[pyc_zipper/compress.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/compress.py) is responsible for adding a compression pack to `.pyc` files. The packed `.pyc` files will call Python's built-in `bz2`, `lzma`, or `zlib` modules to decompress the bytecode during execution.
 
 #### Self-Extracting Program
 In the packed `.pyc` file, there is a "compression pack" that first decompresses and restores the original bytecode before execution. 
@@ -252,7 +312,7 @@ My tests have shown that the `.pyc` file compressed with `lzma` results in the s
 These compression tools are compatible with all versions of Python 3, as they do not rely on specific bytecode versions.
 
 ## 3. Obfuscation and Anti-Decompilation Packing
-The previous compression tools cannot prevent `.pyc` files from being decompiled by libraries like `uncompyle6`. To prevent decompilation, an obfuscation tool `pyc_zipper_obfuscate.py` is used to obfuscate the bytecode instructions and variable names.
+The previous compression tools cannot prevent `.pyc` files from being decompiled by libraries like `uncompyle6`. To prevent decompilation, an obfuscation tool in [pyc_zipper/obfuscate.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/obfuscate.py) is used to obfuscate the bytecode instructions and variable names.
 
 #### A Brief Introduction to the Obfuscation Principles
 
@@ -426,5 +486,5 @@ class :
 This obfuscation tool is also compatible with all versions of Python 3, as it does not depend on specific bytecode versions.
 
 ## 4. Unpacking Tool
-The unpacking tool `pyc_zipper_unpack.py` supports unpacking `.pyc` files that have been packed using the aforementioned compression tools. It restores the original `.pyc` file before compression.  
+The unpacking tool in [pyc_zipper/unpack.py](https://github.com/ekcbw/pyc-zipper/blob/main/pyc_zipper/unpack.py) supports unpacking `.pyc` files that have been packed using the aforementioned compression tools. It restores the original `.pyc` file before compression.  
 However, the unpacking tool cannot restore the instructions and variable names that have been obfuscated by the obfuscation tool.
