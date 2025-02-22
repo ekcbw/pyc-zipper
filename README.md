@@ -68,9 +68,6 @@ pyinstaller file.spec
 注意不能再使用`pyinstaller file.py`，因为会生成一个新的spec文件覆盖掉`file.spec`。  
 如果在运行PyInstaller时看到`pyc-zipper`的输出信息，如：  
 ```
-3545 INFO: Building PYZ because PYZ-00.toc is non existent
-3545 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz
-3919 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz completed successfully.
 3926 INFO: checking PKG
 3927 INFO: Building PKG because PKG-00.toc is non existent
 3927 INFO: Building PKG (CArchive) PKG-00.pkg
@@ -83,16 +80,7 @@ Obfuscating code 'isatty'
 Obfuscating code '_frozen_name'
 Obfuscating code 'PyInstallerImportError'
 Obfuscating code '__init__'
-Obfuscating code 'PyInstallerCDLL'
-Obfuscating code '__init__'
-Obfuscating code 'PyInstallerPyDLL'
-Obfuscating code '__init__'
-Obfuscating code 'PyInstallerWinDLL'
-Obfuscating code '__init__'
-Obfuscating code 'PyInstallerOleDLL'
-Obfuscating code '__init__'
-pyc-zipper: processing ('file', 'E:\\Git-repositories\\Github-publish\\file.py') in _load_code
-Obfuscating code '<module>'
+...
 ```
 则混淆成功。
 
@@ -229,10 +217,8 @@ import functools
 try:
     from timer_tool import timer
 except ImportError:
-
     def (func):
         return func
-
 
 g4 = False
 
@@ -261,7 +247,6 @@ def (l0, l1):
 class :
     _cache = {}
     if g4:
-
         def (l0, l1, l2=HIGHEST):
             if l1 in l0._cache:
                 return l0._cache[l1]
@@ -278,9 +263,6 @@ class :
     def (l0, l1):
         l2 = "{}.{}".format(l0, l1)
         return g18(l2)
-
-    def (l0):
-        return l0._DynObj__code
 
     def (l0, l1):
         return g18(f"{g16(l0, ADD)} + {g16(l1, ADD)}", ADD)
@@ -362,9 +344,6 @@ pyinstaller file.spec
 Note that you cannot use `pyinstaller file.py` again, as it will generate a new spec file that will overwrite `file.spec`.  
 If you see output information from `pyc-zipper` while running PyInstaller, such as:  
 ```
-3545 INFO: Building PYZ because PYZ-00.toc is non existent
-3545 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz
-3919 INFO: Building PYZ (ZlibArchive) E:\Git-repositories\Github-publish\build\file\PYZ-00.pyz completed successfully.
 3926 INFO: checking PKG
 3927 INFO: Building PKG because PKG-00.toc is non existent
 3927 INFO: Building PKG (CArchive) PKG-00.pkg
@@ -377,16 +356,7 @@ Obfuscating code 'isatty'
 Obfuscating code '_frozen_name'
 Obfuscating code 'PyInstallerImportError'
 Obfuscating code '__init__'
-Obfuscating code 'PyInstallerCDLL'
-Obfuscating code '__init__'
-Obfuscating code 'PyInstallerPyDLL'
-Obfuscating code '__init__'
-Obfuscating code 'PyInstallerWinDLL'
-Obfuscating code '__init__'
-Obfuscating code 'PyInstallerOleDLL'
-Obfuscating code '__init__'
-pyc-zipper: processing ('file', 'E:\\Git-repositories\\Github-publish\\file.py') in _load_code
-Obfuscating code '<module>'
+...
 ```
 Then the obfuscation is successful.
 
@@ -528,10 +498,8 @@ import functools
 try:
     from timer_tool import timer
 except ImportError:
-
     def (func):
         return func
-
 
 g4 = False
 
@@ -560,7 +528,6 @@ def (l0, l1):
 class :
     _cache = {}
     if g4:
-
         def (l0, l1, l2=HIGHEST):
             if l1 in l0._cache:
                 return l0._cache[l1]
@@ -577,9 +544,6 @@ class :
     def (l0, l1):
         l2 = "{}.{}".format(l0, l1)
         return g18(l2)
-
-    def (l0):
-        return l0._DynObj__code
 
     def (l0, l1):
         return g18(f"{g16(l0, ADD)} + {g16(l1, ADD)}", ADD)
