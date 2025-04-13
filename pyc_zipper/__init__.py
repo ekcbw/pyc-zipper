@@ -6,7 +6,7 @@ from pyc_zipper.compress import compress_code
 from pyc_zipper.obfuscate import obfuscate_code
 from pyc_zipper.utils import dump_to_pyc,compile_to_pyc,hook_pyinstaller
 
-__version__="1.0.4"
+__version__="1.0.5"
 
 def process_code(co,comp_module=None,no_obfuscation=False,
                  obfuscate_global=True,obfuscate_lineno=True,

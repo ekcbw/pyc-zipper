@@ -1,4 +1,4 @@
-import site,sys,os
+import site,sys,os,shutil,subprocess,shlex
 from setuptools import setup
 
 try:
@@ -8,9 +8,20 @@ except Exception:pass
 sys.path.extend(site.getsitepackages()+[site.getusersitepackages()])
 import pyc_zipper
 
-try:
+if "sdist" in sys.argv[1:]:
+    if not os.path.isfile("README.rst") or \
+       (os.stat("README.md").st_mtime > os.stat("README.rst").st_mtime):
+        if shutil.which("pandoc"):
+            cmd="pandoc -t rst -o README.rst README.md"
+            print("Running pandoc:",cmd,"...")
+            result=subprocess.run(shlex.split(cmd))
+            print("Return code:",result.returncode)
+        else:
+            print("Pandoc command for generating README.rst is required",
+                  file=sys.stderr)
+            sys.exit(1)
     long_desc=open("README.rst",encoding="utf-8").read()
-except OSError:
+else:
     long_desc=""
 
 setup(
