@@ -1,7 +1,7 @@
 import sys,builtins
 from dis import get_instructions
 from inspect import iscode
-from pyobject.code_ import Code
+from pyobject import Code
 
 RET_INSTRUCTION=compile('','',"exec").co_code[-2:] \
     if sys.version_info.minor >= 6 else b'S' # 获取当前版本的返回指令

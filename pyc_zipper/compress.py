@@ -1,5 +1,5 @@
 import marshal
-from pyobject.code_ import Code
+from pyobject import Code
 
 def compress_code(code,comp_module=None):
     if comp_module is not None:
