@@ -2,11 +2,15 @@
 pyc-zipper is a complete toolchain for compressing, obfuscating, and unpacking pyc files based on Python's underlying bytecode.
 pyc-zipper是基于Python的底层字节码，实现的一套完整的pyc文件的压缩、混淆和脱壳工具链。
 """
-from pyc_zipper.compress import compress_code
-from pyc_zipper.obfuscate import obfuscate_code
-from pyc_zipper.utils import dump_to_pyc,compile_to_pyc,hook_pyinstaller
+try:
+    from pyc_zipper.compress import compress_code
+    from pyc_zipper.obfuscate import obfuscate_code
+    from pyc_zipper.utils import dump_to_pyc,compile_to_pyc,hook_pyinstaller
+except ImportError:
+    import sys
+    if "setup.py" not in sys.argv[0].lower():raise
 
-__version__="1.0.6"
+__version__="1.0.7"
 
 def process_code(co,comp_module=None,no_obfuscation=False,
                  obfuscate_global=True,obfuscate_lineno=True,

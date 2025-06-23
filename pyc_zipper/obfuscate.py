@@ -10,12 +10,13 @@ def is_builtin(name):
 def is_magicname(name):
     return name.startswith("__") and name.endswith("__")
 
-def obfuscate_code(co,closure_vars={},globalvars={},
-                 obfuscate_global=True,obfuscate_lineno=True,
-                 obfuscate_filename=True,obfuscate_code_name=True,
-                 obfuscate_bytecode=True,obfuscate_argname=False):
+def obfuscate_code(co,closure_vars={},globalvars={},new_codename=None,
+                   obfuscate_global=True,obfuscate_lineno=True,
+                   obfuscate_filename=True,obfuscate_code_name=True,
+                   obfuscate_bytecode=True,obfuscate_argname=False):
     # obfuscate_argname的函数目前不能用关键字参数调用
     # closure_vars: 闭包函数使用的外部本地变量
+    # new_codename: 字节码的新名称（obfuscate_code_name启用时）
     old_co=co.copy()
     print(f"Obfuscating code {old_co.co_name!r}")
 
@@ -23,7 +24,6 @@ def obfuscate_code(co,closure_vars={},globalvars={},
         co.co_lnotab = b''
         co.co_firstlineno=1
     if obfuscate_filename:co.co_filename = ''
-    if obfuscate_code_name:co.co_name = ''
     if obfuscate_bytecode and \
         co.co_code[-len(RET_INSTRUCTION)*2:]!=RET_INSTRUCTION*2:
         co.co_code += RET_INSTRUCTION # 增加一个无用的返回指令，用于干扰反编译器的解析
@@ -57,7 +57,7 @@ def obfuscate_code(co,closure_vars={},globalvars={},
 
     # 混淆全局变量，跳过导入的名称以及内置函数
     new_globalvars=globalvars.copy()
-    if obfuscate_global: # 只有是全局的字节码，才能新定义混淆表
+    if obfuscate_global: # 只有是全局的字节码，才更新globalvars字典
         insts=list(get_instructions(co._code))
         ignores=[];available_names=[] # ignores: 不能混淆的变量名, available_names: 可以混淆的
         for i,inst in enumerate(insts):
@@ -90,17 +90,34 @@ def obfuscate_code(co,closure_vars={},globalvars={},
 
     co.co_names=tuple(new_globalvars.get(name,name) for name in co.co_names)
 
+    changed_names = {}
+    if obfuscate_code_name:
+        if new_codename is not None:co.co_name = new_codename
+        insts=list(get_instructions(co._code))
+        for i in range(1,len(insts)-1):
+            if insts[i].opname == "MAKE_FUNCTION" and\
+                    insts[i+1].opname == "STORE_NAME" and\
+                    insts[i-1].opname == "LOAD_CONST":
+                if iscode(insts[i-1].argval) and\
+                        not insts[i-1].argval.co_name.startswith("<"): # 3.11+
+                    changed_names[insts[i-1].arg] = insts[i+1].argval # 将函数名设为新变量名
+                elif i>1 and isinstance(insts[i-1].argval,str) and\
+                        iscode(insts[i-2].argval) and\
+                        not insts[i-2].argval.co_name.startswith("<"): # 3.11以下
+                    changed_names[insts[i-2].arg] = "" # 清空co_name
+
     # 递归处理自身包含的字节码
     co_consts = co.co_consts
     for i,obj in enumerate(co_consts):
         if iscode(obj):
-            data=obfuscate_code(Code(obj),new_closure_vars,new_globalvars,
+            code=obfuscate_code(Code(obj),new_closure_vars,new_globalvars,
+                                changed_names[i] if i in changed_names else None,
                                 obfuscate_global=False, # 不再混合内层的全局变量
                                 obfuscate_lineno=obfuscate_lineno,
                                 obfuscate_filename=obfuscate_filename,
                                 obfuscate_code_name=obfuscate_code_name,
                                 obfuscate_bytecode=obfuscate_bytecode,
                                 obfuscate_argname=obfuscate_argname)
-            co_consts = co_consts[:i] + (data._code,) + co_consts[i+1:]
+            co_consts = co_consts[:i] + (code._code,) + co_consts[i+1:]
     co.co_consts = co_consts
     return co

@@ -30,16 +30,17 @@ def dump_to_pyc(pycfilename,code,pycheader=None):
 def hook_pyinstaller(*args,**kw): # 可在pyinstaller的spec文件中使用
     try:
         import PyInstaller.building.utils as utils
+        # writers模块中的get_code_object从utils导入，和utils相同
         import PyInstaller.archive.writers as writers
     except ImportError:
         raise NotImplementedError("PyInstaller is required")
 
     _get_code_object = utils.get_code_object
     @functools.wraps(utils.get_code_object)
-    def inner_get_code_object(*_args,**_kw):
-        print(f"""pyc-zipper: processing \
-{_args}{' '+str(_kw) if _kw else ''} in get_code_object""")
-        co = _get_code_object(*_args,**_kw)
+    def inner_get_code_object(modname, *_args,**_kw):
+        print(f"""pyc-zipper: processing {modname} {_args}\
+{' '+str(_kw) if _kw else ''} in get_code_object""")
+        co = _get_code_object(modname, *_args,**_kw)
         return pyc_zipper.process_code(Code(co),*args,**kw).to_code()
 
     utils.get_code_object=inner_get_code_object
