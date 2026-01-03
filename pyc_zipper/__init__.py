@@ -10,7 +10,7 @@ except ImportError:
     import sys
     if "setup.py" not in sys.argv[0].lower():raise
 
-__version__="1.0.7"
+__version__="1.0.8"
 
 def process_code(co,comp_module=None,no_obfuscation=False,
                  obfuscate_global=True,obfuscate_lineno=True,
